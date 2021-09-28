@@ -26,11 +26,11 @@ ALGORITHM = "tf_conv"
 #DATASET = "cifar_100_f"
 DATASET = "cifar_100_c"
 
-#USE_PRETRAINED_WEIGHTS = True
-USE_PRETRAINED_WEIGHTS = False
+USE_PRETRAINED_WEIGHTS = True
+#USE_PRETRAINED_WEIGHTS = False
 
-#TRAIN_USING_PRETRAINED_WEIGHTS = True
-TRAIN_USING_PRETRAINED_WEIGHTS = False
+TRAIN_USING_PRETRAINED_WEIGHTS = True
+#TRAIN_USING_PRETRAINED_WEIGHTS = False
 
 if DATASET == "mnist_d":
     NUM_CLASSES = 10
@@ -57,28 +57,28 @@ elif DATASET == "cifar_10":
     IH = 32
     IW = 32
     IZ = 3
-    IS = 1024
-    EPOCHS = 10
-    DROPOUT = True
-    DROP_RATE = 0.2
-    BATCH_SIZE = 100
-elif DATASET == "cifar_100_f":
-    NUM_CLASSES = 20
-    IH = 32
-    IW = 32
-    IZ = 3
-    IS = 1024
+    IS = 3072
     EPOCHS = 10
     DROPOUT = True
     DROP_RATE = 0.2
     BATCH_SIZE = 100
 elif DATASET == "cifar_100_c":
+    NUM_CLASSES = 20
+    IH = 32
+    IW = 32
+    IZ = 3
+    IS = 3072
+    EPOCHS = 10
+    DROPOUT = True
+    DROP_RATE = 0.3
+    BATCH_SIZE = 100
+elif DATASET == "cifar_100_f":
     NUM_CLASSES = 100
     IH = 32
     IW = 32
     IZ = 3
-    IS = 1024
-    EPOCHS = 10
+    IS = 3072
+    EPOCHS = 1
     DROPOUT = True
     DROP_RATE = 0.2
     BATCH_SIZE = 100
@@ -177,32 +177,26 @@ class ConvNeuralNetwork_Keras():
             model.add(keras.layers.MaxPooling2D(pool_size = (2, 2)))
             if dropout:
                 model.add(keras.layers.Dropout(dropRate))
-            model.add(keras.layers.Conv2D(48, kernel_size = (3, 3), activation = "relu", padding="same"))
+            model.add(keras.layers.Conv2D(32, kernel_size = (3, 3), activation = "relu", padding="same"))
             model.add(keras.layers.Conv2D(64, kernel_size = (3, 3), activation = "relu", padding="same"))
             model.add(keras.layers.MaxPooling2D(pool_size = (2, 2)))
             if dropout:
                 model.add(keras.layers.Dropout(dropRate))
             model.add(keras.layers.Flatten())
-            model.add(keras.layers.Dense(2048, activation = "sigmoid"))
             model.add(keras.layers.Dense(128, activation = "relu"))
+            model.add(keras.layers.Dense(64, activation = "relu"))
             model.add(keras.layers.Dense(NUM_CLASSES, activation = "softmax"))
         elif DATASET == "cifar_100_f":
             model.add(keras.layers.Conv2D(32, kernel_size = (3, 3), activation = "sigmoid", padding="same", input_shape = inShape))
             model.add(keras.layers.Conv2D(64, kernel_size = (3, 3), activation = "relu", padding="same"))
-            model.add(keras.layers.MaxPooling2D(pool_size = (2, 2)))
-            if dropout:
-                model.add(keras.layers.Dropout(dropRate))
-            model.add(keras.layers.Conv2D(48, kernel_size = (3, 3), activation = "relu", padding="same"))
-            model.add(keras.layers.Conv2D(64, kernel_size = (3, 3), activation = "relu", padding="same"))
-            model.add(keras.layers.MaxPooling2D(pool_size = (2, 2)))
+            model.add(keras.layers.Conv2D(128, kernel_size = (3, 3), activation = "relu", padding="same"))
             if dropout:
                 model.add(keras.layers.Dropout(dropRate))
             model.add(keras.layers.Flatten())
-            model.add(keras.layers.Dense(2048, activation = "sigmoid"))
+            model.add(keras.layers.Dense(256, activation = "relu"))
             model.add(keras.layers.Dense(128, activation = "relu"))
             model.add(keras.layers.Dense(NUM_CLASSES, activation = "softmax"))
         return model
-        # 0.1746
 
     def train(self, xVals, yVals, epochs = 100):
         self.model.fit(xVals, yVals, epochs=epochs, batch_size=BATCH_SIZE)
@@ -278,8 +272,8 @@ def preprocessData(raw):
     yTrainP = to_categorical(yTrain, NUM_CLASSES)
     yTestP = to_categorical(yTest, NUM_CLASSES)
     print("New shape of xTrain dataset: %s." % str(xTrainP.shape))
-    print("New shape of xTest dataset: %s." % str(xTestP.shape))
     print("New shape of yTrain dataset: %s." % str(yTrainP.shape))
+    print("New shape of xTest dataset: %s." % str(xTestP.shape))
     print("New shape of yTest dataset: %s." % str(yTestP.shape))
     return ((xTrainP, yTrainP), (xTestP, yTestP))
 
