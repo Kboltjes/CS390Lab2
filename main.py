@@ -23,11 +23,11 @@ ALGORITHM = "tf_conv"
 #DATASET = "mnist_d"
 #DATASET = "mnist_f"
 #DATASET = "cifar_10"
-#DATASET = "cifar_100_f"
-DATASET = "cifar_100_c"
+DATASET = "cifar_100_f"
+#DATASET = "cifar_100_c"
 
-USE_PRETRAINED_WEIGHTS = True
-#USE_PRETRAINED_WEIGHTS = False
+#USE_PRETRAINED_WEIGHTS = True
+USE_PRETRAINED_WEIGHTS = False
 
 TRAIN_USING_PRETRAINED_WEIGHTS = True
 #TRAIN_USING_PRETRAINED_WEIGHTS = False
@@ -78,9 +78,9 @@ elif DATASET == "cifar_100_f":
     IW = 32
     IZ = 3
     IS = 3072
-    EPOCHS = 1
+    EPOCHS = 10
     DROPOUT = True
-    DROP_RATE = 0.2
+    DROP_RATE = 0.4
     BATCH_SIZE = 100
 
 MODEL_FILENAME = DATASET + '_' + ALGORITHM
@@ -187,12 +187,18 @@ class ConvNeuralNetwork_Keras():
             model.add(keras.layers.Dense(64, activation = "relu"))
             model.add(keras.layers.Dense(NUM_CLASSES, activation = "softmax"))
         elif DATASET == "cifar_100_f":
-            model.add(keras.layers.Conv2D(32, kernel_size = (3, 3), activation = "sigmoid", padding="same", input_shape = inShape))
+            model.add(keras.layers.Conv2D(64, kernel_size = (3, 3), activation = "sigmoid", padding="same", input_shape = inShape))
+            model.add(keras.layers.Conv2D(128, kernel_size = (3, 3), activation = "relu", padding="same"))
+            model.add(keras.layers.MaxPooling2D(pool_size = (2, 2)))
+            if dropout:
+                model.add(keras.layers.Dropout(dropRate))
             model.add(keras.layers.Conv2D(64, kernel_size = (3, 3), activation = "relu", padding="same"))
             model.add(keras.layers.Conv2D(128, kernel_size = (3, 3), activation = "relu", padding="same"))
+            model.add(keras.layers.MaxPooling2D(pool_size = (2, 2)))
             if dropout:
                 model.add(keras.layers.Dropout(dropRate))
             model.add(keras.layers.Flatten())
+            model.add(keras.layers.Dense(512, activation = "relu"))
             model.add(keras.layers.Dense(256, activation = "relu"))
             model.add(keras.layers.Dense(128, activation = "relu"))
             model.add(keras.layers.Dense(NUM_CLASSES, activation = "softmax"))
