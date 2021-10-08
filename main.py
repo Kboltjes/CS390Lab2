@@ -4,9 +4,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.utils import to_categorical
 import random
-
-#links used so far
-#https://keras.io/guides/serialization_and_saving/
+import matplotlib.pyplot as plt
 
 random.seed(1618)
 np.random.seed(1618)
@@ -15,6 +13,21 @@ tf.random.set_seed(1618)
 
 #tf.logging.set_verbosity(tf.logging.ERROR)   # Uncomment for TF1.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+# don't change these
+ALL_DATASETS = ["mnist_d", "mnist_f", "cifar_10", "cifar_100_f", "cifar_100_c"]
+ALL_ALGORITHMS = ["tf_net", "tf_conv"]
+
+
+# Enable if you want to print a summary of the neural net layers
+#DO_PRINT_NET_LAYERS = True
+DO_PRINT_NET_LAYERS = False
+
+# Set this to false if you just want to run the specified algorithm and dataset
+# If you set this to true, it will iterate over every algorithm and dataset automatically and generate
+# two pdfs that show accuracy for each dataset.
+#GENERATE_BAR_GRAPHS = True
+GENERATE_BAR_GRAPHS = False
 
 #ALGORITHM = "guesser"
 #ALGORITHM = "tf_net"
@@ -29,61 +42,70 @@ DATASET = "cifar_100_f"
 #USE_PRETRAINED_WEIGHTS = True
 USE_PRETRAINED_WEIGHTS = False
 
-TRAIN_USING_PRETRAINED_WEIGHTS = True
-#TRAIN_USING_PRETRAINED_WEIGHTS = False
+#TRAIN_USING_PRETRAINED_WEIGHTS = True
+TRAIN_USING_PRETRAINED_WEIGHTS = False
 
-if DATASET == "mnist_d":
-    NUM_CLASSES = 10
-    IH = 28
-    IW = 28
-    IZ = 1
-    IS = 784
-    EPOCHS = 10
-    DROPOUT = True
-    DROP_RATE = 0.2
-    BATCH_SIZE = 100
-elif DATASET == "mnist_f":
-    NUM_CLASSES = 10
-    IH = 28
-    IW = 28
-    IZ = 1
-    IS = 784
-    EPOCHS = 10
-    DROPOUT = True
-    DROP_RATE = 0.2
-    BATCH_SIZE = 100
-elif DATASET == "cifar_10":
-    NUM_CLASSES = 10
-    IH = 32
-    IW = 32
-    IZ = 3
-    IS = 3072
-    EPOCHS = 10
-    DROPOUT = True
-    DROP_RATE = 0.2
-    BATCH_SIZE = 100
-elif DATASET == "cifar_100_c":
-    NUM_CLASSES = 20
-    IH = 32
-    IW = 32
-    IZ = 3
-    IS = 3072
-    EPOCHS = 10
-    DROPOUT = True
-    DROP_RATE = 0.3
-    BATCH_SIZE = 100
-elif DATASET == "cifar_100_f":
-    NUM_CLASSES = 100
-    IH = 32
-    IW = 32
-    IZ = 3
-    IS = 3072
-    EPOCHS = 10
-    DROPOUT = True
-    DROP_RATE = 0.4
-    BATCH_SIZE = 100
+# Just defining these variables globally. 
+# To set their actual values, adjust them in updateDataSet()
+NUM_CLASSES, IH, IW, IZ, IS, EPOCHS, BATCH_SIZE = (0,)*7
+DROPOUT = False
+DROP_RATE = 0.0
+MODEL_FILENAME = ""
 
-MODEL_FILENAME = DATASET + '_' + ALGORITHM
+def updateDataSet():
+    global NUM_CLASSES, IH, IW, IZ, IS, EPOCHS, BATCH_SIZE, DROPOUT, DROP_RATE, MODEL_FILENAME
+    if DATASET == "mnist_d":
+        NUM_CLASSES = 10
+        IH = 28
+        IW = 28
+        IZ = 1
+        IS = 784
+        EPOCHS = 10
+        DROPOUT = True
+        DROP_RATE = 0.2
+        BATCH_SIZE = 100
+    elif DATASET == "mnist_f":
+        NUM_CLASSES = 10
+        IH = 28
+        IW = 28
+        IZ = 1
+        IS = 784
+        EPOCHS = 15
+        DROPOUT = True
+        DROP_RATE = 0.3
+        BATCH_SIZE = 100
+    elif DATASET == "cifar_10":
+        NUM_CLASSES = 10
+        IH = 32
+        IW = 32
+        IZ = 3
+        IS = 3072
+        EPOCHS = 10
+        DROPOUT = True
+        DROP_RATE = 0.2
+        BATCH_SIZE = 100
+    elif DATASET == "cifar_100_c":
+        NUM_CLASSES = 20
+        IH = 32
+        IW = 32
+        IZ = 3
+        IS = 3072
+        EPOCHS = 10
+        DROPOUT = True
+        DROP_RATE = 0.3
+        BATCH_SIZE = 100
+    elif DATASET == "cifar_100_f":
+        NUM_CLASSES = 100
+        IH = 32
+        IW = 32
+        IZ = 3
+        IS = 3072
+        EPOCHS = 10
+        DROPOUT = True
+        DROP_RATE = 0.4
+        BATCH_SIZE = 100
+
+    MODEL_FILENAME = DATASET + '_' + ALGORITHM
 
 
 #=========================<Classes>================================
@@ -116,12 +138,14 @@ class NeuralNetwork_Keras():
 class ConvNeuralNetwork_Keras():
     def __init__(self, dropout = False, dropRate = 0, didLoadFromFile=False, model=None):
         if didLoadFromFile:
-            model.summary()
+            if DO_PRINT_NET_LAYERS:
+                model.summary()
         else:
             model = keras.Sequential()
             lossType = keras.losses.categorical_crossentropy
             model = self.addLayers(model, dropout, dropRate)
-            model.summary()
+            if DO_PRINT_NET_LAYERS:
+                model.summary()
             model.compile(optimizer='adam', loss=lossType)
         self.model = model
     
@@ -149,12 +173,11 @@ class ConvNeuralNetwork_Keras():
                 model.add(keras.layers.Dropout(dropRate))
             model.add(keras.layers.Conv2D(48, kernel_size = (3, 3), activation = "relu"))
             model.add(keras.layers.Conv2D(64, kernel_size = (3, 3), activation = "relu"))
-            model.add(keras.layers.MaxPooling2D(pool_size = (2, 2)))
             if dropout:
                 model.add(keras.layers.Dropout(dropRate))
             model.add(keras.layers.Flatten())
             model.add(keras.layers.Dense(128, activation = "relu"))
-            model.add(keras.layers.Dense(128, activation = "relu"))
+            model.add(keras.layers.Dense(64, activation = "relu"))
             model.add(keras.layers.Dense(NUM_CLASSES, activation = "softmax"))
         elif DATASET == "cifar_10":
             model.add(keras.layers.Conv2D(32, kernel_size = (3, 3), activation = "sigmoid", padding="same", input_shape = inShape))
@@ -290,11 +313,17 @@ def trainModel(data, doBuildNewNet=True, model=None):
     if ALGORITHM == "guesser":
         return None   # Guesser has no model, as it is just guessing.
     elif ALGORITHM == "tf_net":
-        print("Building and training TF_NN.")
-        return buildTFNeuralNet(xTrain, yTrain, doBuildNewNet, model)
+        if doBuildNewNet:
+            print("Building and training TF_NN.")
+        else:
+            print("Training TF_NN using pre-existing weights.")
+        return buildTFNeuralNet(xTrain, yTrain, doBuildNewNet=doBuildNewNet, model=model)
     elif ALGORITHM == "tf_conv":
-        print("Building and training TF_CNN.")
-        return buildTFConvNet(xTrain, yTrain, doBuildNewNet, model)
+        if doBuildNewNet:
+            print("Building and training TF_CNN.")
+        else:
+            print("Training TF_CNN using pre-existing weights.")
+        return buildTFConvNet(xTrain, yTrain, doBuildNewNet=doBuildNewNet, model=model)
     else:
         raise ValueError("Algorithm not recognized.")
 
@@ -304,7 +333,7 @@ def runModel(data, model):
     if ALGORITHM == "guesser":
         return guesserClassifier(data)
     elif ALGORITHM == "tf_net":
-        print("Testing TF_NN.")
+        print(f"Testing TF_NN on {DATASET}.")
         preds = model.predict(data)
         for i in range(preds.shape[0]):
             oneHot = [0] * NUM_CLASSES
@@ -312,7 +341,7 @@ def runModel(data, model):
             preds[i] = oneHot
         return preds
     elif ALGORITHM == "tf_conv":
-        print("Testing TF_CNN.")
+        print(f"Testing TF_CNN on {DATASET}.")
         preds = model.predict(data)
         for i in range(preds.shape[0]):
             oneHot = [0] * NUM_CLASSES
@@ -333,6 +362,7 @@ def evalResults(data, preds):
     print("Classifier algorithm: %s" % ALGORITHM)
     print("Classifier accuracy: %f%%" % (accuracy * 100))
     print()
+    return accuracy
 
 
 def loadModel(filename):
@@ -346,6 +376,9 @@ def loadModel(filename):
 #=========================<Main>================================================
 
 def main():
+    # Update global variables
+    updateDataSet()
+
     raw = getRawData()
     data = preprocessData(raw)
     if USE_PRETRAINED_WEIGHTS and os.path.exists(MODEL_FILENAME):
@@ -362,9 +395,30 @@ def main():
         model.save(MODEL_FILENAME)
 
     preds = runModel(data[1][0], model)
-    evalResults(data[1], preds)
+    return evalResults(data[1], preds)
 
 
 
 if __name__ == '__main__':
-    main()
+    if GENERATE_BAR_GRAPHS:
+        # generate the plots by iterating over all algorithms and all datasets
+        for algorithm in ALL_ALGORITHMS:
+            ALGORITHM = algorithm
+
+            algoName = "CNN" if ALGORITHM == "tf_conv" else "ANN"
+                
+            accuracies = []
+            for dataset in ALL_DATASETS:
+                DATASET = dataset
+                accuracies.append(main())
+
+            # make a plot and save it as a png
+            plt.bar(ALL_DATASETS, accuracies)
+            plt.xlabel("Dataset")
+            plt.ylabel("Accuracy")
+            plt.title(f"{algoName} Accuracies")
+            plt.savefig(f"{algoName}_Accuracy_Plot.pdf")
+        pass
+    else:
+        # just run the network normally
+        main()
